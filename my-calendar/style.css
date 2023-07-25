@@ -1,0 +1,165 @@
+.my-calendar {
+  font-family:'Trebuchet MS', Helvetica, sans-serif;
+  font-size: 12px;
+  background-color: #a3b4c86b;
+  border-radius: 5px;
+  color: #022E51;
+  padding: 5px;
+  max-width: 600px;
+  margin: auto;
+}
+
+.title {
+  height: 22px;
+  padding: 5px 10px;
+  display: flex;
+  flex-direction: row-reverse;  
+  border-bottom: 4px dotted #CC6D3D;
+  align-items: center;
+  gap: 3px;
+}
+
+.title__year {
+  font-size:16px;
+}
+
+.title__month {
+  flex-grow: 1;
+  text-align: center;
+  font-size: 16px;
+}
+
+.title__actions {
+  height: 22px;
+  width: 60px;
+}
+
+.calendar {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+}
+
+.calendar__head {
+  background-color: #cc6d3d2e;
+}
+
+.calendar th,td {
+  width: 100px;
+  border: 1px solid #A3B4C8;
+}
+
+.calendar th {
+  height: 25px;
+  border: 1px solid #CC6D3D;
+}
+
+.calendar td {
+  height: 45px;
+  text-align: right;
+  vertical-align: top;
+  padding: 3px 5px;
+}
+
+.calendar__selected-day {
+  cursor: pointer;
+}
+
+.calendar__selected-day:hover {
+  background-color: #cc6d3d2e;;
+}
+
+.button {
+  border: 0;  
+  background: none;
+  box-shadow: none;
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+  background-color: #a3b4c86b;
+  border: 1px solid transparent;
+  font-family: inherit;
+  height: 22px;
+}
+
+.button:hover {
+  color: #CC6D3D;
+  border: 1px solid #CC6D3D;
+}
+
+.my-popup {
+  position: fixed;
+  display: none;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.6);
+}
+
+.my-popup__title {
+  text-align: center;
+}
+
+.my-popup__content {
+  border: 1px solid #A3B4C8;
+  border-radius: 5px;
+  background-color: white;
+  text-align: left;
+  width: 300px;
+  margin: 100px auto;
+}
+
+.my-popup__body {
+  padding: 0 10px;
+}
+
+.my-popup__buttons {
+  padding: 10px 0;
+  text-align: center;
+}
+
+.users {
+  margin: 5px 0 0;
+  display: flex;
+  gap: 5px;
+}
+
+.info {
+  background-color: #fff;
+  border: 1px solid #CC6D3D;
+  border-left: 4px dotted #CC6D3D;
+  padding: 0 15px;
+}
+
+.info__title {
+  text-align: center;
+  font-weight: bold;
+}
+
+.users__line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.users__name {
+  flex-grow: 1;
+  min-width: 50px;
+}
+
+
+.active-icon {
+  cursor: pointer;
+}
+
+.active-icon:hover {
+  color:#CC6D3D;
+}
+
+.gummy {
+  flex-grow: 1;
+}
+
+
+
