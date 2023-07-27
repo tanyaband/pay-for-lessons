@@ -244,20 +244,26 @@ class MyCalendar extends HTMLElement {
 
   addUser = () => {
     let body = `
-      <label>Имя:</label>
-      <input id="user-name"></>
-      <p>
-        <label>Цвет иконок:</label>
+      <p class="my-popup__line">
+        <label>Имя:</label>
+        <input id="user-name"></>
       </p>  
+      <p class="my-popup__line">
+        <label>Цвет иконок:</label>
+        <input id="user-color" type="color" value="#B74803">
+      </p>
+
     `
     this.showPopup('Новый пользователь', body, this.addUserOk);
   }
 
   addUserOk = () => {
-    let name = this.shadowRoot.getElementById('user-name').value;
+    let name = this.shadowRoot.getElementById('user-name').value,
+        color = this.shadowRoot.getElementById('user-color').value;
     if (name) {
       users.push({
-        name: name
+        name: name,
+        color: color
       })
       this.shadowRoot.querySelector('.my-popup').style.display = 'none';
     }
@@ -275,8 +281,8 @@ class MyCalendar extends HTMLElement {
       text+=`
       <p class="users__line">
         <input type="checkbox"></input>
-        <span style="color: #B74803"><i class="fa-regular fa-credit-card"></i></span>
-        <span style="color: #B74803"><i class="fa-regular fa-circle-check"></i></span>
+        <span style="color: ${user.color}"><i class="fa-regular fa-credit-card"></i></span>
+        <span style="color: ${user.color}"><i class="fa-regular fa-circle-check"></i></span>
         <span class="users__name">${user.name}</span>
         <span class="users__remove-btn active-icon" data-user=${user.name}><i class="fa-solid fa-xmark"></i></span>
       </p>

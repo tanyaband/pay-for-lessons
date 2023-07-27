@@ -114,6 +114,17 @@
   padding: 0 10px;
 }
 
+.my-popup__line {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.my-popup__line label {
+  width: 30%;
+  text-align: right;
+}
+
 .my-popup__buttons {
   padding: 10px 0;
   text-align: center;
