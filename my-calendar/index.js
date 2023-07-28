@@ -248,16 +248,28 @@ class MyCalendar extends HTMLElement {
   addLesson = (ev) => {
     let cell = ev.target.closest('td'),
     title = `Уроки ${cell.dataset.day}.${this.month}.${this.year}`,
-    body = `
+    body = '';
+    users.forEach( user => {
+      body += `
+      <p>${user.name}:<p>
       <p>
         <input id="payment" type='checkbox'></>
-        <span style="color: #B74803"><i class="fa-regular fa-credit-card"></i></span>
+        <span style="color: ${user.color}"><i class="fa-regular fa-credit-card"></i></span>
+        Оплата картой
+      </p>
+      <p>
+        <input id="payment" type='checkbox'></>
+        <span style="color: ${user.color}"><i class="fa-solid fa-coins"></i></span>
+        Оплата наличными
       </p>
       <p>
         <input id="lesson" type='checkbox'></>
-        <span style="color: #B74803"><i class="fa-regular fa-circle-check"></i></span>
+        <span style="color: ${user.color}"><i class="fa-regular fa-circle-check"></i></span>
+        Урок
       </p>
     `
+    })
+
     this.showPopup(title, body, this.addLessonsOk);
   }
 
@@ -356,7 +368,7 @@ class MyCalendar extends HTMLElement {
     });
     this.shadowRoot.querySelector('.users__list').innerHTML = text;
   }
-  
+
 }
 
 customElements.define("my-calendar", MyCalendar);
