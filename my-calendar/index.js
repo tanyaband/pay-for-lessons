@@ -51,34 +51,9 @@ const template = `
 `;
 
 let users = [];
-const payments = [1, 29];
-const lessons = [ 
-  {
-    year: 2023,
-    month: 5,
-    day: 1
-  },
-  {
-    year: 2023,
-    month: 5,
-    day: 8
-  },
-  {
-    year: 2023,
-    month: 6,
-    day: 15
-  },
-  {
-    year: 2023,
-    month: 6,
-    day: 22
-  },
-  {
-    year: 2023,
-    month: 6,
-    day: 29
-  }
-];
+let usersMap;
+let payments = [1, 29];
+let lessons = [];
 
 class MyCalendar extends HTMLElement {
 
@@ -97,7 +72,7 @@ class MyCalendar extends HTMLElement {
 
     this.attachShadow( {mode: 'open'});
     this.shadowRoot.innerHTML = template;
-    users = JSON.parse(localStorage.getItem('pfl_users')) ?? [];
+    this.loadUsers();
     console.log('--load users:');
     console.log(users);
     this.render();
@@ -135,8 +110,7 @@ class MyCalendar extends HTMLElement {
     firstDay = (firstDay + 6) % 7;
     let lessonsFiltered = lessons
       .filter(el => el.year == this.year && el.month == this.month)
-      .map(el => el.day);
-    
+
     for (let i=0;i<firstDay;i++) {
       tmp += '<td></td>';
     }
@@ -157,13 +131,17 @@ class MyCalendar extends HTMLElement {
         <\div>
         `  ;
       }
-      if (lessonsFiltered.includes(i)) {
+      let lessons = lessonsFiltered.filter(el => el.day === i+1)
+      if (lessons.length) {
         ev += `
         <div style="text-align:left">
-          <span style="color: #B74803"><i class="fa-regular fa-circle-check"></i></span>
-        <\div>
-        `  ;
-        
+        `
+        lessons.forEach(el => {
+          ev += `
+            <span style="color: ${usersMap[el.user]}"><i class="fa-regular fa-circle-check"></i></span>
+          `        
+        });
+        ev += "</div>"
       }
       tmp += `<td class="calendar__selected-day" data-day=${i+1}>${i+1} ${ev}</td>`;
     }
@@ -248,29 +226,56 @@ class MyCalendar extends HTMLElement {
   addLesson = (ev) => {
     let cell = ev.target.closest('td'),
     title = `Уроки ${cell.dataset.day}.${this.month}.${this.year}`,
-    body = '';
+    body = '',
+    filteredLessons = lessons.filter(el => el.year === this.year && el.month === this.month && el.day === +cell.dataset.day);
     users.forEach( user => {
+      let lesson = filteredLessons.find(el => el.user == user.name);
       body += `
       <p>${user.name}:<p>
       <p>
-        <input id="payment" type='checkbox'></>
+        <input id="payment" type='checkbox' class="cb-payment-card" data-user=${user.name}></>
         <span style="color: ${user.color}"><i class="fa-regular fa-credit-card"></i></span>
         Оплата картой
       </p>
       <p>
-        <input id="payment" type='checkbox'></>
+        <input id="payment" type='checkbox' class="cb-payment-cash" data-user=${user.name}></>
         <span style="color: ${user.color}"><i class="fa-solid fa-coins"></i></span>
         Оплата наличными
       </p>
       <p>
-        <input id="lesson" type='checkbox'></>
+        <input id="lesson" type='checkbox' ${lesson ? 'checked': ''} class="cb-lesson" data-user=${user.name}></>
         <span style="color: ${user.color}"><i class="fa-regular fa-circle-check"></i></span>
         Урок
       </p>
     `
     })
 
-    this.showPopup(title, body, this.addLessonsOk);
+    let onOk = () => {
+      let cbLessons = this.shadowRoot.querySelectorAll(".cb-lesson");
+      cbLessons.forEach(cb => {
+        let index = lessons.findIndex(el => el.year === this.year && 
+          el.month === this.month && el.day === +cell.dataset.day && el.user === cb.dataset.user);
+        if (cb.checked && index == -1) {
+          lessons.push({
+            user: cb.dataset.user,
+            year: this.year,
+            month: this.month,
+            day: +cell.dataset.day,           
+          })
+        } else if (!cb.checked && index !== -1) {
+          lessons.splice(index, 1);
+        }
+      })
+      this.closePopup();
+      this.saveLessons();
+      this.render();
+    }
+
+    this.showPopup(title, body, onOk);
+  }
+
+  saveLessons = () => {
+    localStorage.setItem('pfl_lessons', JSON.stringify(lessons));
   }
 
   addUser = () => {
@@ -322,7 +327,8 @@ class MyCalendar extends HTMLElement {
 
       let onOk = () => {
         let name = this.shadowRoot.getElementById('user-name').value,
-        color = this.shadowRoot.getElementById('user-color').value;
+        color = this.shadowRoot.getElementById('user-color').value,
+        oldname = user.name;
         if (user && name) {
           user.name = name;
           user.color = color;
@@ -330,6 +336,7 @@ class MyCalendar extends HTMLElement {
         this.closePopup();
         this.saveUsers();
         this.renderUsers();
+        this.updateLessons(oldname, name);
       }
 
       this.showPopup('Редактирование пользователя', body, onOk);
@@ -345,11 +352,33 @@ class MyCalendar extends HTMLElement {
       users.splice(users.indexOf(obj),1);
       this.saveUsers();
       this.renderUsers();
+      this.removeLessons(name);
     }    
+  }
+
+  loadUsers = () => {
+    users = JSON.parse(localStorage.getItem('pfl_users')) ?? [];
+    this.calcUsersMap();
   }
 
   saveUsers = () => {
     localStorage.setItem('pfl_users', JSON.stringify(users));
+    this.calcUsersMap();
+  }
+
+  calcUsersMap = () => {
+    usersMap = users.reduce((a, v) => ({ ...a, [v.name]: v.color}), {})
+  }
+
+  removeLessons = (user) => {
+    lessons = lessons.filter(el => el.user != user);
+    this.render();
+  }
+
+  updateLessons = (oldname, name) => {
+    lessons.forEach(el => {
+      if (el.user === oldname) el.user = name;
+    });
   }
 
   renderUsers = () => {
