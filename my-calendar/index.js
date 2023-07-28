@@ -50,11 +50,6 @@ const template = `
   </div>
 `;
 
-let users = [];
-let usersMap;
-let payments = [1, 29];
-let lessons = [];
-
 class MyCalendar extends HTMLElement {
 
   constructor() {
@@ -70,11 +65,17 @@ class MyCalendar extends HTMLElement {
       cbOk: null,
     }
 
+    this.users = [];
+    this.usersMap;
+    this.lessons = [];
+    this.payments = [1, 29];
+
     this.attachShadow( {mode: 'open'});
     this.shadowRoot.innerHTML = template;
     this.loadUsers();
+    this.loadLessons();
     console.log('--load users:');
-    console.log(users);
+    console.log(this.users);
     this.render();
     this.renderUsers();
   }
@@ -108,7 +109,7 @@ class MyCalendar extends HTMLElement {
     let firstFullDate = new Date(this.year, this.month);
     let firstDay = firstFullDate.getDay();
     firstDay = (firstDay + 6) % 7;
-    let lessonsFiltered = lessons
+    let lessonsFiltered = this.lessons
       .filter(el => el.year == this.year && el.month == this.month)
 
     for (let i=0;i<firstDay;i++) {
@@ -123,7 +124,7 @@ class MyCalendar extends HTMLElement {
         tmp += '</tr><tr>';
       }
       let ev = '';
-      if (payments.includes(i)) {
+      if (this.payments.includes(i)) {
         ev += `
         <div style="text-align:left">
           <span style="color: #B74803"><i class="fa-regular fa-credit-card"></i></span>
@@ -138,7 +139,7 @@ class MyCalendar extends HTMLElement {
         `
         lessons.forEach(el => {
           ev += `
-            <span style="color: ${usersMap[el.user]}"><i class="fa-regular fa-circle-check"></i></span>
+            <span style="color: ${this.usersMap[el.user]}"><i class="fa-regular fa-circle-check"></i></span>
           `        
         });
         ev += "</div>"
@@ -227,8 +228,8 @@ class MyCalendar extends HTMLElement {
     let cell = ev.target.closest('td'),
     title = `Уроки ${cell.dataset.day}.${this.month}.${this.year}`,
     body = '',
-    filteredLessons = lessons.filter(el => el.year === this.year && el.month === this.month && el.day === +cell.dataset.day);
-    users.forEach( user => {
+    filteredLessons = this.lessons.filter(el => el.year === this.year && el.month === this.month && el.day === +cell.dataset.day);
+    this.users.forEach( user => {
       let lesson = filteredLessons.find(el => el.user == user.name);
       body += `
       <p>${user.name}:<p>
@@ -253,17 +254,17 @@ class MyCalendar extends HTMLElement {
     let onOk = () => {
       let cbLessons = this.shadowRoot.querySelectorAll(".cb-lesson");
       cbLessons.forEach(cb => {
-        let index = lessons.findIndex(el => el.year === this.year && 
+        let index = this.lessons.findIndex(el => el.year === this.year && 
           el.month === this.month && el.day === +cell.dataset.day && el.user === cb.dataset.user);
         if (cb.checked && index == -1) {
-          lessons.push({
+          this.lessons.push({
             user: cb.dataset.user,
             year: this.year,
             month: this.month,
             day: +cell.dataset.day,           
           })
         } else if (!cb.checked && index !== -1) {
-          lessons.splice(index, 1);
+          this.lessons.splice(index, 1);
         }
       })
       this.closePopup();
@@ -272,10 +273,6 @@ class MyCalendar extends HTMLElement {
     }
 
     this.showPopup(title, body, onOk);
-  }
-
-  saveLessons = () => {
-    localStorage.setItem('pfl_lessons', JSON.stringify(lessons));
   }
 
   addUser = () => {
@@ -294,7 +291,7 @@ class MyCalendar extends HTMLElement {
       let name = this.shadowRoot.getElementById('user-name').value,
           color = this.shadowRoot.getElementById('user-color').value;
       if (name) {
-        users.push({
+        this.users.push({
           name: name,
           color: color
         })
@@ -313,7 +310,7 @@ class MyCalendar extends HTMLElement {
         name = span?.dataset.user;
 
     if (edit && name) {
-      let user = users.find(el => el.name == name);
+      let user = this.users.find(el => el.name == name);
       let body = `
       <p class="my-popup__line">
         <label>Имя:</label>
@@ -337,6 +334,8 @@ class MyCalendar extends HTMLElement {
         this.saveUsers();
         this.renderUsers();
         this.updateLessons(oldname, name);
+        this.saveLessons();
+        this.render();
       }
 
       this.showPopup('Редактирование пользователя', body, onOk);
@@ -348,42 +347,51 @@ class MyCalendar extends HTMLElement {
         remove = span?.dataset.remove,
         name = span?.dataset.user;
     if (remove && name) {
-      let obj = users.find(el => el.name == name);
-      users.splice(users.indexOf(obj),1);
+      let obj = this.users.find(el => el.name == name);
+      this.users.splice(this.users.indexOf(obj),1);
       this.saveUsers();
       this.renderUsers();
       this.removeLessons(name);
+      this.saveLessons();
+      this.render();
     }    
   }
 
   loadUsers = () => {
-    users = JSON.parse(localStorage.getItem('pfl_users')) ?? [];
+    this.users = JSON.parse(localStorage.getItem('pfl_users')) ?? [];
     this.calcUsersMap();
   }
 
   saveUsers = () => {
-    localStorage.setItem('pfl_users', JSON.stringify(users));
+    localStorage.setItem('pfl_users', JSON.stringify(this.users));
     this.calcUsersMap();
   }
 
   calcUsersMap = () => {
-    usersMap = users.reduce((a, v) => ({ ...a, [v.name]: v.color}), {})
+    this.usersMap = this.users.reduce((a, v) => ({ ...a, [v.name]: v.color}), {})
   }
 
   removeLessons = (user) => {
-    lessons = lessons.filter(el => el.user != user);
-    this.render();
+    this.lessons = this.lessons.filter(el => el.user != user);
   }
 
   updateLessons = (oldname, name) => {
-    lessons.forEach(el => {
+    this.lessons.forEach(el => {
       if (el.user === oldname) el.user = name;
     });
   }
 
+  loadLessons = () => {
+    this.lessons = JSON.parse(localStorage.getItem('pfl_lessons')) ?? [];
+  }
+
+  saveLessons = () => {
+    localStorage.setItem('pfl_lessons', JSON.stringify(this.lessons));
+  }
+
   renderUsers = () => {
     let text = '';
-    users.forEach(user => {
+    this.users.forEach(user => {
       text+=`
       <p class="users__line">
         <input type="checkbox"></input>
