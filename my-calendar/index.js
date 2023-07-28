@@ -90,6 +90,10 @@ class MyCalendar extends HTMLElement {
     this.year = now.getFullYear();
     this.months = this.listMonth();
     this.days = this.listDays();
+    this.popup = {
+      body: '',
+      cbOk: null,
+    }
 
     this.attachShadow( {mode: 'open'});
     this.shadowRoot.innerHTML = template;
@@ -190,8 +194,9 @@ class MyCalendar extends HTMLElement {
     this.shadowRoot.getElementById('prev').addEventListener('click', this.prevMonth);
     this.shadowRoot.querySelector('.calendar__body').addEventListener('click', this.addLesson);
     this.shadowRoot.getElementById('add-user').addEventListener('click', this.addUser);
-    this.shadowRoot.querySelector('.my-popup').addEventListener('click', this.closePopup);
+    this.shadowRoot.querySelector('.my-popup').addEventListener('click', this.closePopupCancel);
     this.shadowRoot.querySelector('.users__list').addEventListener('click', this.removeUser);
+    this.shadowRoot.querySelector('.users__list').addEventListener('click', this.editUser);
   }
 
   render() {
@@ -220,10 +225,24 @@ class MyCalendar extends HTMLElement {
   }
 
   showPopup = (title, body, cbOk) => {
+    this.popup.cbOk = cbOk;
     this.shadowRoot.querySelector('.my-popup__title').innerHTML = title;
     this.shadowRoot.querySelector('.my-popup__body').innerHTML = body;
     this.shadowRoot.querySelector('.my-popup').style.display = 'block';
-    this.shadowRoot.getElementById('ok').addEventListener('click', cbOk);  
+    this.shadowRoot.getElementById('ok').addEventListener('click', this.popup.cbOk);  
+  }
+
+  closePopupCancel = (ev) => {
+    if (ev.target.dataset.action === 'close') {
+      this.closePopup();
+    }
+  }
+
+  closePopup = () => {
+    this.shadowRoot.querySelector('.my-popup').style.display = 'none';
+    if (this.popup.cbOk) {
+      this.shadowRoot.getElementById('ok').removeEventListener('click', this.popup.cbOk);
+    }
   }
 
   addLesson = (ev) => {
@@ -252,23 +271,69 @@ class MyCalendar extends HTMLElement {
         <label>Цвет иконок:</label>
         <input id="user-color" type="color" value="#B74803">
       </p>
-
     `
-    this.showPopup('Новый пользователь', body, this.addUserOk);
+
+    let onOk = () => {
+      let name = this.shadowRoot.getElementById('user-name').value,
+          color = this.shadowRoot.getElementById('user-color').value;
+      if (name) {
+        users.push({
+          name: name,
+          color: color
+        })
+        this.closePopup();
+        this.saveUsers();
+        this.renderUsers();
+      }
+    }
+
+    this.showPopup('Новый пользователь', body, onOk);
   }
 
-  addUserOk = () => {
-    let name = this.shadowRoot.getElementById('user-name').value,
+  editUser = (ev) => {
+    let span = ev.target.closest('span'),
+        edit = span?.dataset.edit,
+        name = span?.dataset.user;
+
+    if (edit && name) {
+      let user = users.find(el => el.name == name);
+      let body = `
+      <p class="my-popup__line">
+        <label>Имя:</label>
+        <input id="user-name" value=${user.name}></>
+      </p>  
+      <p class="my-popup__line">
+        <label>Цвет иконок:</label>
+        <input id="user-color" type="color" value=${user.color}>
+      </p>
+      `
+
+      let onOk = () => {
+        let name = this.shadowRoot.getElementById('user-name').value,
         color = this.shadowRoot.getElementById('user-color').value;
-    if (name) {
-      users.push({
-        name: name,
-        color: color
-      })
-      this.shadowRoot.querySelector('.my-popup').style.display = 'none';
+        if (user && name) {
+          user.name = name;
+          user.color = color;
+        }
+        this.closePopup();
+        this.saveUsers();
+        this.renderUsers();
+      }
+
+      this.showPopup('Редактирование пользователя', body, onOk);
     }
-    this.saveUsers();
-    this.renderUsers();
+  }
+
+  removeUser = (ev) => {
+    let span = ev.target.closest('span'),
+        remove = span?.dataset.remove,
+        name = span?.dataset.user;
+    if (remove && name) {
+      let obj = users.find(el => el.name == name);
+      users.splice(users.indexOf(obj),1);
+      this.saveUsers();
+      this.renderUsers();
+    }    
   }
 
   saveUsers = () => {
@@ -284,36 +349,14 @@ class MyCalendar extends HTMLElement {
         <span style="color: ${user.color}"><i class="fa-regular fa-credit-card"></i></span>
         <span style="color: ${user.color}"><i class="fa-regular fa-circle-check"></i></span>
         <span class="users__name">${user.name}</span>
-        <span class="users__remove-btn active-icon" data-user=${user.name}><i class="fa-solid fa-xmark"></i></span>
+        <span class="users__edit-btn active-icon" data-edit = 1 data-user=${user.name}><i class="fa-regular fa-pen-to-square"></i></span>
+        <span class="users__remove-btn active-icon" data-remove = 1 data-user=${user.name}><i class="fa-solid fa-xmark"></i></span>
       </p>
       `
     });
     this.shadowRoot.querySelector('.users__list').innerHTML = text;
   }
-
-  removeUser = (ev) => {
-    let span = ev.target.closest('span');
-    let name = span?.dataset.user;
-    if (name) {
-      let obj = users.find(el => el.name == name);
-      users.splice(users.indexOf(obj),1);
-      this.saveUsers();
-      this.renderUsers();
-    }    
-  }
-
-
-  closePopup = (ev) => {
-    if (ev.target.dataset.action === 'close') {
-      this.shadowRoot.querySelector('.my-popup').style.display = 'none';
-    }
-  }
-
-
-  ok = () => {
-    alert('ok');
-  }
-
+  
 }
 
 customElements.define("my-calendar", MyCalendar);
